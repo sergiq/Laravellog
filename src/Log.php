@@ -56,7 +56,7 @@ class Log
 
         \Illuminate\Support\Facades\Log::$error_type(
             $new_line_separator . 'Message: ' . $e->getMessage() . $new_line_separator .
-            'File: ' . $e->getFile() . $new_line_separator .
+            'File: ' . str_replace(base_path(),"",$e->getFile()) . $new_line_separator .
             'Line: ' . $e->getLine() . $new_line_separator .
             'Code: ' . $e->getCode() . $new_line_separator .
             'Request Url: ' . request()->fullUrl() . $new_line_separator .
