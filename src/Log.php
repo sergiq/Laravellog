@@ -44,7 +44,9 @@ class Log
             $trace[] = '...';
         }
 
-        $request_params     = json_encode(request()->all());
+        $request = request()->all();
+        if (isset($request[ 'password' ])) $request[ 'password' ] = '*************';
+        $request_params     = json_encode($request);
         $trace_param        = json_encode($trace);
         $new_line_separator = "::";
 
@@ -56,7 +58,7 @@ class Log
 
         \Illuminate\Support\Facades\Log::$error_type(
             $new_line_separator . 'Message: ' . $e->getMessage() . $new_line_separator .
-            'File: ' . str_replace(base_path(),"",$e->getFile()) . $new_line_separator .
+            'File: ' . str_replace(base_path(), "", $e->getFile()) . $new_line_separator .
             'Line: ' . $e->getLine() . $new_line_separator .
             'Code: ' . $e->getCode() . $new_line_separator .
             'Request Url: ' . request()->fullUrl() . $new_line_separator .
