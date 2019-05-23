@@ -2,6 +2,8 @@
 
 namespace Sergiq\Laravellog;
 
+use Illuminate\Support\Str;
+
 /**
  * Class Log
  *
@@ -36,19 +38,18 @@ class Log
      * @param int        $stack_trace_length
      *
      */
-    static public function log(\Throwable $e, string $error_type = self::ERROR, int $stack_trace_length = 20)
+    static public function log(\Throwable $e, string $error_type = self::ERROR)
     {
-        $trace = $e->getTrace();
-        if (count($trace) > $stack_trace_length){
-            $trace   = array_slice($trace, 0, $stack_trace_length);
-            $trace[] = '...';
-        }
-
-        $request = request()->all();
-        if (isset($request[ 'password' ])) $request[ 'password' ] = '*************';
-        $request_params     = json_encode($request);
-        $trace_param        = json_encode($trace);
         $new_line_separator = "::";
+        $exception_message  = $e->getMessage();
+        $exception_line     = $e->getLine();
+        $exception_file     = $e->getFile();
+        $exception_code     = $e->getCode();
+        $request_path       = request()->path();
+        $request_url        = request()->root();
+        $user_ip            = request()->ip();
+        $params             = request()->all();
+        $trace_param        = var_export($e->getTraceAsString(), true);
 
         if (env('APP_ENV') == 'local'){
             $new_line_separator = "\n";
@@ -56,15 +57,23 @@ class Log
             $trace_param        = var_export($e->getTraceAsString(), true);
         }
 
-        \Illuminate\Support\Facades\Log::$error_type(
-            $new_line_separator . 'Message: ' . $e->getMessage() . $new_line_separator .
-            'File: ' . str_replace(base_path(), "", $e->getFile()) . $new_line_separator .
-            'Line: ' . $e->getLine() . $new_line_separator .
-            'Code: ' . $e->getCode() . $new_line_separator .
-            'Request Url: ' . request()->fullUrl() . $new_line_separator .
-            'Referer Url: ' . \URL::previous() . $new_line_separator .
-            "Request params: " . $request_params . $new_line_separator .
-            "Trace: " . $trace_param
-        );
+        foreach ($params as $key => $value) {
+            if (Str::contains($key, [ 'password', 'key', 'secret' ])){
+                $params[ $key ] = '**hidden parameter**';
+            }
+        }
+
+        $message = 'v.3' . $new_line_separator .
+            'Message: ' . $exception_message . $new_line_separator .
+            'File: ' . $exception_file . $new_line_separator .
+            'Line: ' . $exception_line . $new_line_separator .
+            'Code: ' . $exception_code . $new_line_separator .
+            'IP: ' . $user_ip . $new_line_separator .
+            'Request Url: ' . $request_url . '/' . $request_path . $new_line_separator .
+            'Referer Url: ' . ( \Request::server('HTTP_REFERER') ? : '<direct-request>' ) . $new_line_separator .
+            "Request params: " . json_encode($params) . $new_line_separator .
+            "Trace: " . json_encode($e->getTrace());
+
+        \Illuminate\Support\Facades\Log::$error_type($message);
     }
 }
