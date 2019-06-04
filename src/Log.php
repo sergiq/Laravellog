@@ -49,11 +49,11 @@ class Log
         $request_url        = request()->root();
         $user_ip            = request()->ip();
         $params             = request()->all();
-        $trace_param        = var_export($e->getTraceAsString(), true);
+        $method             = request()->method();
+        $trace_param        = json_encode($e->getTrace());
 
         if (env('APP_ENV') == 'local'){
             $new_line_separator = "\n";
-            $request_params     = var_export(request()->all(), true);
             $trace_param        = var_export($e->getTraceAsString(), true);
         }
 
@@ -63,16 +63,17 @@ class Log
             }
         }
 
-        $message = 'v.3' . $new_line_separator .
+        $message = 'v.4' . $new_line_separator .
             'Message: ' . $exception_message . $new_line_separator .
             'File: ' . $exception_file . $new_line_separator .
             'Line: ' . $exception_line . $new_line_separator .
             'Code: ' . $exception_code . $new_line_separator .
             'IP: ' . $user_ip . $new_line_separator .
+            'Method: ' . $method . $new_line_separator .
             'Request Url: ' . $request_url . '/' . $request_path . $new_line_separator .
             'Referer Url: ' . ( \Request::server('HTTP_REFERER') ? : '<direct-request>' ) . $new_line_separator .
             "Request params: " . json_encode($params) . $new_line_separator .
-            "Trace: " . json_encode($e->getTrace());
+            "Trace: " . $trace_param;
 
         \Illuminate\Support\Facades\Log::$error_type($message);
     }
